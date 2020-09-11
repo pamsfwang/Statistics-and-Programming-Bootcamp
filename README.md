@@ -1,2 +1,2 @@
 # Statistics-and-Programming-Bootcamp
-This repository contains materials for a leading statistics and programming bootcamp using R and Python. This was created for Department of Psychology, Stanford University
+This repository contains materials for leading a statistics and programming bootcamp using R and Python. These materials were created for the Department of Psychology, Stanford University
