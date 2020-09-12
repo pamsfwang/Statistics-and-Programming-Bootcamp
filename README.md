@@ -97,3 +97,25 @@ Including basic skills with Bash and Github, and knowledge of open science and g
 * Sharing data and code
 
 **Good coding practices**
+
+## Contributors
+Many people have contributed to developing and revising the tutorial material over the years:     
+Paul Thibodeau    
+Mike Frank    
+Benoit Monin    
+Ewart Thomas   
+Anna Khazenzon   
+Cayce Hook   
+Michael Waskom   
+Steph Gagnon   
+Dan Birman   
+Natalia Velez   
+Kara Weisman   
+Andrew Lampinen   
+Joshua Morris   
+Yochai Shavit   
+Jackie Schwartz   
+Russ Poldrack   
+Shao Fang (Pam) Wang   
+Arielle Keller   
+Leili Mortazavi   
