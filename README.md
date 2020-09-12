@@ -32,7 +32,8 @@ Including basic skills with Bash and Github, and knowledge of open science and g
 
 
 ## Modules (and table of contents)
-**Basic R**    
+**Basic R**         
+`R (basic) directory`         
 * Introduction to R syntax
   *  Variables
   * Data types
@@ -50,6 +51,7 @@ Including basic skills with Bash and Github, and knowledge of open science and g
   * Introduction to ggplot 
 
 **Basic Python**    
+`Python (basic) directory`         
 * Introduction to Python 
   * Variables (`Python module01-01 Variables.ipynb`)
   * Control structures (`Python module01-02 Control structures.ipynb`)
@@ -61,27 +63,34 @@ Including basic skills with Bash and Github, and knowledge of open science and g
 * Data visualization (`Python module01-04 Visualization.ipynb`)
   * Introduction to seaborn 
 
-**Statistical concepts and implementation with R / Python**
-* Data-wrangling review + T-tests
-* Correlation + linear regression
-* Logistic regression + cross validation
+**Statistical concepts and implementation with R / Python**       
+* Data-wrangling review + T-tests 
+  * `R (advanced) directory`: Part 1 slides
+* Correlation + linear regression 
+  * `R (advanced) directory`: Part 2 slides
+* Logistic regression + cross validation 
+  * `R (advanced) directory`: Part 3 slides
 * Practice with an example dataset (with R / Python)
+  * `R (advanced) and Python (advanced) directory`         
 
-**Bash**
+**Bash**    
+`Bash directory`         
 * Introduction to Bash
  * Creating, moving, and destroying directories
  * Manipulating files
  * Bash scripts 
 * Connecting to remote servers (ssh)
 
-**Github**
+**Github**     
+`Github directory`
 * Introduction to git
 * Github repositories
 * Cloning repositories
 * Add/commit/push changes
 * Rescuing older versions
 
-**Open Science**
+**Open Science**    
+`Open Science directory`
 * What is “open science”?
 * Pre-registration
 * Reproducibility
