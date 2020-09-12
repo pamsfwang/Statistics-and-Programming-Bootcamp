@@ -1,0 +1,411 @@
+---
+title: "Data Wrangling"
+author: "Leili Mortazavi"
+date: "8/3/2020"
+output:
+  pdf_document:
+    toc: TRUE
+    toc_depth: 2
+---
+
+
+\newpage
+
+Many people have contributed to developing and revising the tutorial material over the years: 
+
+Anna Khazenzon 
+Cayce Hook
+Paul Thibodeau
+Mike Frank
+Benoit Monin
+Ewart Thomas
+Michael Waskom
+Steph Gagnon 
+Dan Birman
+Natalia Velez,
+Kara Weisman
+Andrew Lampinen
+Joshua Morris
+Yochai Shavit
+Jackie Schwartz
+Russ Poldrack
+
+\newpage
+# Note on relative paths vs. absolute paths
+
+Before we dig into working with data in R, let's talk about some good
+practices about how to write down your paths.
+
+If you look at the top of your console panel, you can see your path.
+(i.e., where you are in the eyes of RStudio).
+
+If you open up an R script in a new session of RStudio, the path will
+automatically be set to where your R script is saved. 
+
+If you already have other R scripts open in RStudio and want to work 
+on a different script, you may need to change your path to where that 
+script is saved.
+
+To do this run:
+
+```{r set working directory, eval = FALSE}
+setwd("~/PATH/TO/CURRENT/SCRIPT")
+```
+
+Why bother??
+
+If you can keep a tidy directory structure, then you can write a 
+**relative path** for importing and exporting data and plots. 
+Not only will this make your coding easier, it will make your script 
+reproducible (for your future self and for others). 
+So if you move your project directory, or if someone else wants to 
+work on it on their own device, the script will work smoothly, 
+without the need to change all the paths every time.
+
+
+So now that we've started working on a new script, which is saved 
+in a different folder, let's use relative path to go there:
+
+```{r set working directory with relative path}
+setwd("../Part2")
+```
+
+As you see now, all of us can now use this relative path within our
+R_basic folder, regardless of having saved the bootcamp files 
+in different locations. 
+
+Just to convince you a little more, if I wanted to use absolute path
+this is how it would look like:
+`setwd("~/STANFORD/teaching/summerStats_2020/modules/R_basic/Part2")`
+
+Ugly huh?!
+Plus, yours would probably be completely different up until the 
+"modules" part. 
+
+# Importing data
+
+Now, let's use relative path to import the albums dataset, 
+sitting in you data folder.
+
+```{r import .csv}
+data <- read.csv("../data/albums.csv")
+```
+
+
+# Inspecting data
+
+```{r check data}
+View(data)
+# note that View has to be capitalized!
+
+head(data)
+```
+
+This type of data is called a dataframe.
+
+Let's formally check its type to see what R thinks of it:
+
+```{r dataframe as a variable type}
+class(data)
+```
+
+Get a list of all the column names:
+
+```{r check column names}
+colnames(data)
+```
+
+Remember we said R tries to detect data types? 
+Even though the whole dataset is a data frame, each column may
+be numeric, character, etc. Let's check:
+
+```{r check type of a specific column}
+# use your indexing skills
+# select a column based on its index (i.e., first column):
+class(data[,1])
+
+# select a column based on its name, using `$` as follows:
+class(data$album)
+```
+
+Note: The TAB key is your friend! 
+Use it to make your life easier, 
+AND to decrease the chances of making a typo, 
+which will result in an annoying hard-to-detect error.
+
+We can use the summary function of a data frame to get
+some summary values on each column:
+
+```{r summary of each column}
+summary(data)
+```
+
+```{r check for NA values}
+# on the entire data frame
+is.na(data)
+
+# on a specific column
+# TRY FOR YOURSELF!
+# Hint: use your indexing skills.
+
+
+
+# is.na(data$year)
+```
+
+# Manipulating data
+
+When we analyze and visualize the data, we often need to manipulate data in some ways. 
+For instance, we may need to select only 2 of the variables, 
+or we may need to take the mean and standard deviation of a subset of our observations,
+e.g., separately for males and females.
+
+## Tidyverse
+
+To do these, and many more operations, there's a set of packages that come in very handy.
+That is, tidyverse (by Hadley Wikham): a collection of packages that make  
+transforming data a lot easier!
+
+
+```{r install and load tidyvers}
+# install.packages("tidyverse")
+
+# load it
+library(tidyverse)
+```
+
+**Note**: when we write scripts, it is conventional to 
+load all the required packages on top of the script.
+
+## Selecting and subsetting
+
+```{r select some of the variables}
+select(.data = data, year, artist)
+```
+
+```{r select and save in a new dataframe}
+data_1 <- select(.data = data, year, artist)
+head(data_1)
+```
+
+```{r subset only some observations}
+data_2 <- subset(data_1, year > 1995)
+head(data_2)
+```
+
+## Piping
+
+It's quite inefficient to create new variables every time we want to perform
+some operation. What if we want to perform several steps (which we often do)?
+
+Let's learn a really nice feature of the tidyverse package that will make 
+coding in R much easier. 
+
+This is called ** piping**. ` %>% `
+Piping will allow us to do several operations in one big chain. 
+
+```{r piping}
+# select and subset in one go
+
+data_select <- data %>%        
+  # means: take the dataframe and feed it into the next line
+  select(year, artist) %>%     
+  # means: select these two columns from the "data" dataframe, 
+  # and feed that into the next line
+  subset(year > 1995)          
+  # means: subset some of the rows and save the result in the "data_select" dataframe
+head(data_select)
+```
+## Making new variables
+
+```{r make a new variable}
+data %>% 
+  mutate(sales = sales_millions * 1000000)
+```
+
+We learned 3 important and very common functions of tidyverse: 
+`select()`, `subset()`, and `mutate()`
+
+Let's practice now.
+
+```{r practice}
+
+```
+
+
+## Grouping and summarizing
+
+dplyr (part of tidyvers) can also be used to quickly summarize data by 
+different grouping variables. 
+
+In this dataset, who's the bestselling artist?
+
+To find out, we group by `artist`, calculate each artist's total album   
+sales with `summarize()`, and save the result in `result`:
+
+```{r more_dplyr}
+result <- data %>%                              
+  # group the data by `artist`
+  group_by(artist) %>%                             
+  # add up the `sales` for each artist and save in `total_sales`
+  summarize(total_sales = sum(sales))
+
+head(result)
+```
+
+
+```{r practice summarize, eval = FALSE}
+# setting eval to false in the brackets tells R not to run this code when knitting
+# APPLY YOUR KNOWLEDGE:
+# How would you change this code if we instead wanted to compare  
+# the total sales, in millions, of solo artists vs. group artists?
+
+result <- data %>%                                
+  mutate(sales = sales_millions * 1000000) %>%     
+  group_by(artist) %>%                             
+  summarize(total_sales = sum(sales)) %>%          
+  arrange(desc(total_sales)) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ANSWER:
+# result <- albums %>%                                
+#  group_by(solo) %>%                             
+#  summarize(total_sales = sum(sales_millions))
+
+# you can also group by multiple variables
+result <- albums %>%
+  group_by(artist, solo) %>%
+  summarize(total_sales = sum(sales_millions)) %>%
+  arrange(desc(total_sales))
+```
+
+
+# Tidy data
+
+Tidy data is long data, where every row is one observation.
+If there are multiple observations per subject, then we have 
+multiple rows per subject,
+but then have another variable (i.e., column) denoting some 
+aspect of those observations.
+
+Let's work through an example.
+
+Import a dataset from your data/ folder.
+The file is called "prepost.csv".
+
+```{r import new data}
+# practice importing csv files
+
+
+
+
+
+
+
+# ANSWER:
+data_wide <- read_csv("../data/prepost.csv") 
+```
+
+```{r inspect your data}
+# first in matrix view: 
+
+# top 5 rows:
+
+# names of columns:
+
+
+
+
+
+
+
+# ANSWER:
+# first in matrix view: 
+# View(data_wide)
+
+# top 5 rows:
+# head(data_wide, 5)
+
+# names of columns:
+# colnames(data_wide)
+```
+
+As you can see, this dataset is not in tidy format, 
+because we have two observations per row (i.e., pretest and posstes).
+
+Remember that tidy data is long data, where every row is one observation.
+If there are multiple observations per subject, then we have multiple 
+rows per subject, but then have another variable (i.e., column) denoting 
+some aspect of those observations.
+
+Here, we want to make a variable that only denotes whether the score was
+from pretest or from posttest. Let's call this variable "prepost".
+
+Then we want to put the score into another column. 
+Let's call this variable "score".
+
+So how do we do that?
+
+Here's a function in tidyverse that takes care of this operation very gracefully:
+`pivot_longer()`
+
+```{r pivot longer}
+data_long <- data_wide %>% 
+  pivot_longer(cols = c(pretest, posttest),   
+               # means: select the columns that include the scores
+               names_to = "prepost",         
+               # means: take the name of these two columns and put 
+               # them into a new variable called "prepost"
+               values_to = "score"           
+               # means: take the values of these two columns and put them into a new variable called "score" 
+               )
+```
+
+Now let's check out what pivot_longer() did. 
+
+```{r check tidy data}
+data_long %>% 
+  head()
+
+# How many rows did the wide data have?
+
+
+# How many rows does the long data have? 
+
+```
+
+As we work through the visualization modules and statistical analyses,
+you'll see the benefits of having tidy data. 
+
+# Saving out wrangled data
+
+After we manipulate out data in ways that's ready for analyses or visualizations, 
+we may want to save it out in a csv file, so that we don't need to wrangle it again.
+
+
+```{r save out data}
+write_csv(x = data_long, 
+          path = "../data/prepost_tidy.csv")
+```
+
+
+--------------------
+
+For extra material on the following, see module **BasicR_Part2_dataWranglingExtra.Rmd**
+
+- creating dataframes in R
+- manipulating data using base R 

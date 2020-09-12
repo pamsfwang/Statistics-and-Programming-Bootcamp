@@ -1,0 +1,71 @@
+---
+title: "Introduction to Statistical Computing with R: Part 2"
+output:
+  html_document:
+    highlight: pygments
+    theme: flatly
+    toc: yes
+---
+
+### Welcome to part 2!
+
+Let's load our data and packages back in:
+
+```{r}
+library(ggplot2)
+df_survey = read.csv('https://raw.githubusercontent.com/lampinen/R_workshop_materials/master/data/fieldsimul1.csv')
+```
+
+
+Linear regression
+-----------------------
+T-test works well for the specific case of comparing two-means. For most other analysis we use the function [`lm()`](http://www.statmethods.net/stats/regression.html). For the sake of this tutorial we will use it to examine the best-fitting linear relationship between quantitative variables (e.g., X and Y). 
+To use `lm()`, you must provide a formula, like `Y ~ X`. In this case, X is your *independent variable* (IV), and Y is your *dependent variable* (DV). That is, this formula asked "as X changes, what happens to Y? How much of the variance in Y is explained by variance in X?"
+
+For instance, we might want to investigate the relationship between age (X) and optimism (Y), depicted in the plot above. As age increases, how does optimism change?
+
+```{r lm_ageVSoptmism_df_survey}
+#Note that we are now returning to our original dataset (df_survey) because we are no longer interested in just the two parties.
+
+rs2 = lm(optmism ~ age, data = df_survey) # this is the same as lm(df_survey$optmism ~ df_survey$age)
+summary(rs2) # given the model we just fit with lm(), give us the summary
+```
+
+Based off of this output, we can see that age is a significant predictor of optimism. Below the table of $t$ values and $p$ values, we can find the "Multiple R-squared" statistic of the model. This tells us that the variance in age explains approximately 10% of the variance in optimism.
+
+More complex analyses may include *multiple* predictors, using a technique called *multiple regression*. One common reason to include additional predictors is to "control" for exogenous variables -- variables which are uninteresting in themselves yet related to the relationship we are analyzing. For example, if older people are more likely to belong to one party than another and people in that party tend to be more optimistic (perhaps because of party rhetoric or policy stances), then the relationship we observed above may have nothing to do with age. The real relationship could be between party and optimism: it just happens that age and party membership is correlated. Multiple regression helps us tease apart these relationships: we want to know whether age is related to optimism *after accounting for party membership*. While the math of multiple regression is more complicated, R makes it as easy as adding additional terms to the formula in `lm`:
+
+```{r lm_multiRegression}
+df_survey$party = factor(df_survey$party) # treat party as a factor
+rs2_mult = lm(optmism ~ age + party, data = df_survey)
+summary(rs2_mult) # given the model we just fit with lm(), give us the summary
+```
+
+*Don't worry yet about understanding every line of this output*: it's complicated and we will likely spend some time understanding it. If you feel like you do not have sufficient understanding- feel free to contact the course TA's or the departmental stats TA's.
+
+In the meantime, let's focus on two particularly interesting properties of these results. First, looking at the table with $t$ and $p$ values, we see that *age* is still highly significant as a predictor even after controlling for party membership. Second, looking at the "R-squared" statistic, we see that it's gone up to about 0.30. Just by including "party" as a predictor, we were able to go from explaining about 10% of the variance in optimism to explaining 30% of the variance! Intuitively, this appears to be a "better" model.
+
+Returning to the simple linear regression (with a single predictor), we can ask `{ggplot}` to reconstruct it from the aesthetics object and plot it on top of the data:
+
+```{r plot_optmism_on_age_reg, fig.width=5, fig.height=4}
+ggplot(data=df_survey, aes(x=age,y=optmism)) +
+  geom_point() +
+  ggtitle('Optimism vs. Age') +
+  geom_smooth(method="lm",color="red",se=F)
+```
+
+We can also visualize diagnostic plots of the residuals from the `lm()` output, which  can be helpful in showing if assumptions of normality, etc, are met, or to identify outliers:
+
+```{r plot_optmism_on_age_lm, fig.width=5, fig.height=4}
+plot(rs2)
+```
+
+Note that if you want to really understand what's happening in these plots, it can be valuable to plot these by hand, for example here is some code to plot the residuals in `{ggplot}`:
+
+```{r}
+ggplot(data=df_survey, aes(x=age,y=rs2$residuals)) +
+  geom_point() +
+  geom_smooth(method="lm", se=F)
+```
+
+

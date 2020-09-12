@@ -1,0 +1,590 @@
+---
+title: "Data wrangling (2019)"
+author: "stats crew from before 2020"
+date: "8/6/2020"
+output: pdf_document
+---
+
+EXTRAS
+
+# More basics about data frames
+
+Most often when doing statistics with R, you'll be using *data frames.*   
+Technically, a data frame is a list of vectors.   
+It's similar in appearance to a basic spreadsheet in Excel or SPSS,   
+where you might represent your study variables in   
+columns and your observations in rows. 
+
+It's possible to make a data frame from scratch with the base R function   
+`data.frame()` (though in practice, you will probably not do this often):
+We'll also be showing you more effective ways to code with the  
+tidyverse (by Hadley Wikham): a collection of packages that make  
+transforming data a lot easier!
+
+```{r dataframe_intro}
+
+albums = data.frame(
+  album = c("Speakerboxx/The Love Below",
+            "Life After Death",
+            "All Eyez on Me",
+            "Licensed to Ill",
+            "Stankonia",
+            "Ready to Die",
+            "R U Still Down? Remember Me",
+            "Ill Communication"),
+  artist = c("Outkast",
+             "The Notorious B.I.G.",
+             "2Pac",
+             "Beastie Boys",
+             "Outkast",
+             "The Notorious B.I.G.",
+             "2Pac",
+             "Beastie Boys"),
+  year = c(2003,
+           1997,
+           1996,
+           1986,
+           2000,
+           1994,
+           1997,
+           1994),
+  sales_millions = c(11.4,
+                     10.2,
+                     9,
+                     9,
+                     4,
+                     4,
+                     4,
+                     3),
+  solo = c(FALSE,
+           TRUE,
+           TRUE,
+           FALSE,
+           FALSE,
+           TRUE,
+           TRUE,
+           FALSE)
+  )
+albums
+
+
+
+#### OR ####
+
+album <- c("Speakerboxx/The Love Below",
+            "Life After Death",
+            "All Eyez on Me", 
+            "Licensed to Ill", 
+            "Stankonia",
+            "Ready to Die",
+            "R U Still Down? Remember Me",
+            "Ill Communication")
+artist <- c("Outkast",
+             "The Notorious B.I.G.",
+             "2Pac", 
+             "Beastie Boys",
+             "Outkast", 
+             "The Notorious B.I.G.",
+             "2Pac", 
+             "Beastie Boys")
+year <- c(2003,
+           1997,
+           1996,
+           1986,
+           2000,
+           1994,
+           1997,
+           1994)
+
+sales_millions <- c(11.4,
+                     10.2,
+                     9,
+                     9,
+                     4,
+                     4,
+                     4,
+                     3)
+solo <- c(FALSE, 
+           TRUE,
+           TRUE,
+           FALSE,
+           FALSE, 
+           TRUE,
+           TRUE,
+           FALSE)
+
+albums <- data.frame(
+  album,
+  artist,
+  year,
+  sales_millions,
+  solo
+) # can also use tibble() instead of data.frame from tidyverse
+albums
+```
+
+
+### Subsetting data
+
+Every time you want to do something with a column in a data frame,  
+you use the `$` to specify the data frame and column you want to act upon.  
+Since these columns are really vectors,  
+what we've learned about brackets and functions also applies here.   
+So, we can use brackets to return all the observations where   
+a certain condition is true: 
+
+```{r get_a_column}
+albums$artist # pull out a specific vector
+
+albums$artist[albums$sales_millions > 10] # subset a variable based
+# on a logical statement. In this case, returns the artisits
+# who issued albums with over 10 million in sales.
+
+#### OR ####
+# install.packages("tidyverse")
+library(tidyverse)
+# let's say you want to creat a new dataframe with artists who issued 
+# albums with over $10 mil in sales
+albums_overten <- albums %>%
+  filter(sales_millions > 10)
+
+```
+
+You can also use brackets directly on the dataframe,  
+but since it has two dimensions, the brackets contain a comma.  
+Whether you put numbers before or after the comma specifies whether  
+you want to do stuff to your data frame's  *rows* or *columns*: 
+```{r}
+albums[1, ] # returns the first row of `albums`
+albums[, 1] # returns the first column 
+
+albums[1:3, 2:4] # returns a new dataframe containing rows 1-3 and columns 2-4 
+# generally however, I'd recommend to identify the column or row by name rather than the specific placement in the df
+```
+
+You can use this to get rid of variables:
+```{r}
+albums[, -3] 
+# returns a new dataframe with the original third column of `albums` removed
+albums[-3, ] 
+# returns a new dataframe with the original third row of `albums` removed
+```
+
+### Creating new variables
+
+You can add new columns (i.e. variables) to the data frame with `$`: 
+
+```{r expand_data frame}
+albums$sales <- albums$sales_millions*1000000
+albums$language <- "English"
+# if you enter a single value rather than a vector,
+# every observation will be set to that value
+
+albums
+
+#### OR ####
+
+albums_new <-
+  albums %>%
+  mutate(
+    sales = sales_millions*1000000,
+    language = "English"
+  )
+
+
+# APPLY YOUR KNOWLEDGE:
+# Write a line of code to add a new column to `albums`
+# called `years_since_release` and populate it with the number of years 
+# it's been since the album came out. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# You should have written something like: 
+# albums$years_since_release <- 2019 - albums$year
+# or 
+# albums_new <-
+#   albums_new %>%
+#   mutate(years_since_release =
+#            2019 - year)
+
+```
+
+### Recoding variables
+
+Say we're interested in making a new grouping variable to represent  
+the decade an album came out ("80s", "90s", or "00s").   
+It's possible to recode variables using brackets:
+
+```{r}
+# First make an empty placeholder for the new variable:
+albums$decade <- NA
+
+# Then set each of the values according to whatever subsetting criteria are relevant:
+albums$decade[(albums$year >= 1980) & (albums$year < 1990)] <- "80s"
+albums$decade[(albums$year >= 1990) & (albums$year < 2000)] <- "90s"
+albums$decade[(albums$year >= 2000) & (albums$year < 2010)] <- "00s"
+
+#### OR ####
+## let's just glimpse first to see if year is the data class we expect
+glimpse(albums_new)
+albums_decade <-
+  albums_new %>%
+  mutate(decade =
+           ifelse(
+             year >= 1980 & year < 1990,
+             "80s",
+             "NA"
+             ),
+         decade =
+           ifelse(
+             year >=1990 & year < 2000,
+             "90s",
+             decade
+           ),
+         decade =
+           ifelse(
+             year >=2000 & year < 2010,
+             "00s",
+             decade
+           )
+             )
+### OR ###
+##case_when is also very useful to avoid having so many ifelse arguments
+#this is from the tidyverse library  
+```
+
+This can be confusing to look at at first, so I'll give another example. 
+
+Say I want to add a variable `feud` whose value depends on whether  
+the artist was involved in the [90s East Coast-West Coast hip hop rivalry](https://en.wikipedia.org/wiki/East_Coast%E2%80%93West_Coast_hip_hop_rivalry).   
+That is, I want `feud` to be "TRUE" if the artist is   
+The Notorious B.I.G. or Tupac, and "FALSE" otherwise. 
+
+Here's one way to do it:
+
+```{r}
+albums$feud <- FALSE
+albums$feud[albums$artist == "2Pac"] <- TRUE
+albums$feud[albums$artist == "The Notorious B.I.G."] <- TRUE
+
+
+#### OR ### 
+
+albums_feud <-
+  albums_decade %>%
+  mutate(feud =
+           ifelse(artist == "2Pac" | artist == "The Notorious B.I.G.",
+         TRUE,
+         FALSE)
+  )
+
+
+```
+
+```{r}
+# APPLY YOUR KNOWLEDGE:
+
+# Try making a new variable called 'born_yet' which 
+# is set to TRUE if the album came out after you were born, and FALSE otherwise.
+
+
+
+
+
+
+
+
+
+
+
+
+# My answer:
+# albums$born_yet <- FALSE
+# albums$born_yet[albums$year >= 1989] <- TRUE
+# or
+# albums_bornyet <-
+#   albums_feud %>%
+#   mutate(
+#     born_yet =
+#       year >= 1991,
+#     TRUE,
+#     FALSE
+#   )
+
+```
+
+
+### A note on `$`
+
+Remember, you have to use `$` when referring to a variable in a data frame. 
+
+Try `mean(sales_millions)` or even `albums$artist[sales_millions > 10]`.   
+Why don't these work?
+
+
+Look back over at your Environment pane. There's now a category,   
+Data, that contains `albums`. 
+There's also the Values category, which contains all of the other   
+random objects we've made throughout this lesson. 
+
+The object `sales_millions` only exists in the data frame `albums`,   
+rather than in your broader 'Global Environment'.
+
+It's useful to keep variables inside their own data frames,  
+because it enables you to, e.g., simultaneously work on multiple  
+datasets that contain variables with the same name   
+(`albums$sales` vs. `pizza$sales`).
+
+-------------------------
+
+
+# Where do the numbers go? (Part II)
+
+Right now, our data frame only exists in R's memory,  
+and its contents depend exactly upon which lines of code  
+we've run during this R session (and in what order). 
+
+
+What if we wanted to save `albums` to share with a friend  
+who only has Excel or SPSS? 
+
+R can write data frames to .csv files, which are easily opened by   
+many different programs and are a useful format in which to share data. 
+
+To begin, we first have to tell R where to save files.
+
+### Setting your working directory
+Whenever you use R, you're in some *working directory* (essentially a folder),  
+where R will default to saving files   
+(and searching for them when you try to open a file). 
+
+Type `getwd()` to discover your current working directory.
+
+
+To set your working directory, type `setwd()` with the   
+file path in quotation marks inside the parentheses, e.g.
+
+```{r setwd_desktop}
+#setwd("~/R_workshop_materials")
+```
+(You can set your working directory by hand through   
+*Session > Set Working Directory > Choose Directory*.) 
+
+(In the future, you should set your working directory to a   
+project-specific folder with `setwd()` whenever you start   
+working on a new project in R. If you leave it as "~/Desktop" things  
+will get cluttered quickly.) 
+
+### Writing a .csv
+
+Now we know where our file will be saved, let's `write.csv()`.  
+The tidy way is `write_csv()` which I will be using instead.
+The first argument is the R data frame you want to save,   
+the second argument is the filename you want to save it under,   
+and the third argument specifies that we don't want to save row names. 
+
+```{r}
+# you can also set your path to a variable name, e.g.
+write_csv(albums_bornyet,
+          "albums.csv", 
+          append = FALSE,
+          col_names = TRUE)
+```
+
+Go find `albums.csv` and open it up in Excel.   
+Make some changes to it, save it, and close the file.
+
+Now click on `albums` in the Environment pane.   
+Do your changes to the document show up in R?
+
+```{r }
+#
+
+
+
+
+
+
+
+
+
+#
+```
+
+Now run:
+```{r where_do_the_numbers_go}
+albums$artist <- c(
+  "Rihanna",
+  "Beyonce",
+  "Taylor", 
+  "Britney", 
+  "Adele", 
+  "Cher",
+  "Whitney", 
+  "Celine"
+  ) 
+head(albums) # see that we've changed the values for 'artist'
+
+#### OR #####
+albums <-
+  albums_bornyet %>%
+  mutate(
+    artist = c(
+      "Rihanna",
+      "Beyonce",
+      "Taylor", 
+      "Britney", 
+      "Adele", 
+      "Cher",
+      "Whitney",
+      "Celine"
+      )
+    )
+  
+```
+
+Reopen the .csv file in Excel. Did this change show up?
+
+```{r }
+#
+
+
+
+
+
+
+
+
+
+#
+```
+
+
+What R has in its memory is distinct from the original .csv file.   
+This is a good thing, since it allows you to manipulate your dataset   
+(which inevitably involves making mistakes and/or deleting variables   
+or observations) while preserving the original, complete raw data. 
+
+Now replace our data frame, `albums`,   
+with the contents of `albums.csv` using `read.csv`:
+
+### Reading from a .csv
+
+```{r readcsv}
+albums <- read_csv("albums.csv")
+head(albums)
+```
+
+The correct artist names have been restored! 
+
+
+---------------
+
+
+# Manipulating data frames with dplyr 
+Tidyverse includes dplyr, so don't need to install dplyr separately
+
+
+We just reviewed a bunch of different actions you can take with data frames:
+
+* filtering observations based on some criterion 
+* transforming variables
+* summarizing data with functions like `mean()`
+
+We can do all of these things (and more) using functions  
+from tidyverse including the R package `dplyr`, and we can chain it all together   
+with the pipe operator, `%>%`. Pipes free us from having to   
+precede every variable with `dataframe$`--instead, each line operates on   
+the data frame that was fed into it from the previous pipe.  
+Hopefully this will be clearer with examples:
+
+```{r}
+# First let's reset the value of `albums`:
+albums = data.frame(
+  album = c(
+    "Speakerboxx/The Love Below",
+    "Life After Death",
+    "All Eyez on Me", 
+    "Licensed to Ill", 
+    "Stankonia", 
+    "Ready to Die",
+    "R U Still Down? Remember Me", 
+    "Ill Communication"
+    ), 
+  artist = c(
+    "Outkast", 
+    "The Notorious B.I.G.", 
+    "2Pac", 
+    "Beastie Boys", 
+    "Outkast", 
+    "The Notorious B.I.G.",
+    "2Pac", 
+    "Beastie Boys"
+    ), 
+  year = c(
+    2003, 
+    1997, 
+    1996, 
+    1986, 
+    2000, 
+    1994, 
+    1997,
+    1994), 
+  sales_millions = c(
+    11.4,
+    10.2,
+    9,
+    9,
+    4,
+    4, 
+    4, 
+    3
+    ),
+  solo = c(
+    FALSE, 
+    TRUE, 
+    TRUE,
+    FALSE, 
+    FALSE, 
+    TRUE,
+    TRUE, 
+    FALSE)
+  )
+
+# Here we'll do two of the things we did above--transforming variables  
+# and filtering out observations--using pipes and dplyr functions this time:
+
+albums2 <- albums %>%                             
+  mutate(sales = sales_millions * 1000000) %>%    
+  filter(sales > 10000000)                        
+
+# The first line specifies that we're modifying `albums` 
+# and putting the result in `albums2`.
+# The second line takes `albums` and creates a new variable, `sales`,
+# and passes this updated dataframe to the next line.
+# The third line takes the dataframe from the previous step, and throws out
+# the rows where `sales` is less than or equal to 10,000,000.
+# After the final line has finished running, the final dataframe is put in `albums2`.
+# No changes are made to the contents of `albums`. 
+
+```
+

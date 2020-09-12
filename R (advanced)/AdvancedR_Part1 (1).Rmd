@@ -1,0 +1,383 @@
+---
+title: "Introduction to Statistical Computing with R: Part 1"
+output:
+  html_document:
+    highlight: pygments
+    theme: flatly
+    toc: yes
+---
+
+### Contributors
+Many people have contributed to developing and revising the tutorial material over the years: 
+
+Anna Khazenzon 
+Cayce Hook
+Paul Thibodeau
+Mike Frank
+Benoit Monin
+Ewart Thomas
+Michael Waskom
+Steph Gagnon 
+Dan Birman
+Natalia Velez,
+Kara Weisman
+Andrew Lampinen
+Joshua Morris
+Yochai Shavit
+Jackie Schwartz
+Russ Poldrack
+
+
+### Welcome to part 1!
+
+The first part of this module is designed to go over some of the things we covered in the intro to R and serves as a refresher, as well as introducing a bit of new material. The second part of this module disusses ways to get help and introduces two types of statistical tests and how to run them in R. This last part goes beyond the scope of PSYCH 251 but might be helpful as you work on your own data.
+
+### A Reminder about DataFrames
+
+In R we almost exclusively use "DataFrames" to organize our data. Here's an example dataframe and some useful functions for investigating what's on the inside. Some of these basic functions for manipulating/exploring dataframes can be found in the [R Cheatsheet](http://stanford.edu/class/psych252/cheatsheets/index.html#r-cheatsheet) on the class website!
+
+```{r}
+mydata = data.frame(x=c(1,2,3,4,5),y=c(25,94,32,45,88))
+mydata
+str(mydata)
+head(mydata)
+summary(mydata)
+```
+
+Let's jump right in!
+
+### An interlude on R data
+
+Although it's possible to create a dataframe from scratch (as demonstrated above) in most cases you'll be reading data into R that was created elsewhere. It's useful at this point to introduce two concepts that govern how R thinks about accessing data. When dealing with data that are saved in a file somewhere on your computer, R has the concept of the *working directory*. Any functions that read or write files to or from the disk will take as an argument a filename, and the filename you give should be a path relative to your working directory. You can change the working directory either by calling the `setwd()` function or by using the GUI tools in the R or RStudio apps.
+
+Assigning some value to a variable creates a new object in the *workspace*, which you can think of as R's "working memory." Any object in the workspace can be immediately referenced in a line of code. You can open a pane in RStudio that will show you the name of every object in your workspace along with some information about those objects, and you can also get a vector of these names with the `ls()` function. To remove an object from your workspace, use the `rm()` function.
+
+A sidenote on data storage: Most of the data we'll be using is in *csv* format, which stands for "comma separated values." This is a plain-text format where commas divide columns and rows are placed on new lines. Because the data are stored as plain text, you can view (and edit) them in a basic text editor. The csv format is also advantageous relative to proprietary binary formats (like `.xlsx` or `.mat`) because pretty much any statistical application will contain routines to read and write these files.
+
+Manipulating Dataframes
+-----------------------
+
+In the first day, we learned to use the *tidyverse* package to manipulate data. Let's load the package now, so that we can use its functionality in the remainder of this tutorial.
+```{r load packages}
+library(tidyverse)
+```
+
+To begin, we'll load in a simple data file from a website for a previous rendition of PSYCH 252, and store it as a [dataframe](http://www.r-tutor.com/r-introduction/data-frame) named "df_survey".
+
+This data file is called `fieldsimul1.csv`. Here, likely voters (*n* = 240) were surveyed, and report their age (`age`), and level of optimism (`optmism`), as well as other variables. **Is age related to optimism?**
+
+We typically will be loading in dataframes directly from the class website. More info about the dataframes (e.g., fields) can be found on the [old 252 Datasets page](http://stanford.edu/class/psych252/data/index.html) of the class site, where you can also download the dataset directly!
+
+```{r load df_survey}
+df_survey = read.csv('https://raw.githubusercontent.com/lampinen/R_workshop_materials/master/data/fieldsimul1.csv') %>% 
+  #here we make a variable for the participant ID number
+  rowid_to_column("participant")   
+```
+
+Let's explore this data a bit to see what we'll be working with:
+
+```{r explore_df_survey}
+str(df_survey)
+head(df_survey)
+summary(df_survey)
+```
+
+Here we can see that this **dataframe** is composed of 7 **variables** that each has 200 observations. In this case, each observation represents a different participant, and the 7 variables tell us information about that participant. As an example, let's look at all the information for participant 5 by looking at the 5th row of df_survey:
+
+```{r observeRow_df_survey}
+df_survey %>% 
+  subset(participant == 5)
+
+# doing the same thing using base R:
+# participant_num = 5
+# df_survey[participant_num,]
+```
+
+This shows us that participant 5 is 25 years old, and has an optimism score of 6.
+
+NOTE: The "optimism" variable in this dataframe is accidentally misspelled "optmism" - please be aware of this as you call this variable in this tutorial as well as parts 2 and 3 that use the same dataframe. 
+
+Integer vs. Factor
+------------------
+
+Now, we might want to treat some variables as qualitative, nominal **factors** rather than continuous, numeric **integers**. In R, we must specify which variables to treat as factors if the **levels** (i.e., unique values) of the variable are composed of numbers instead of strings. Note that if the variable (e.g., "Subid") *levels* start with a letter (e.g., "subject1", "subject2") R will automatically interpret the variable as a *factor*. If the variable levels start with a number (e.g., "1", "2"), R will automatically interpret the variable as an *integer*. If you want the variable interpreted differently, you have to tell R.
+
+For instance, the variable "age" is continuous, but "agecat" is not. However, since the **levels** of "agecat" are indicated with numbers, we must tell R to treat "agecat" as a factor:
+
+```{r agecat_asfactor_df_survey}
+df_survey <- df_survey %>% 
+  # use mutate to make a new variable based on an existing variable
+  # which will overwrite if the two variable names are equal
+  # effectively modifying an existing variable (i.e. agecat)
+  mutate(agecat = agecat %>% factor())
+
+# doing the same thing using base R:
+# df_survey$agecat = factor(df_survey$agecat)
+```
+
+Now we can look at the structure of the df_survey dataframe again, to make sure agecat is now a factor:
+
+```{r agecat_checkfactor_df_survey}
+str(df_survey)
+```
+
+Plotting with ggplot
+--------------------------------
+In this section we will introduce some plotting options that we did not cover in module 1. Again, the details of working with ggplot go beyond the requirements of PSYCH 251, but are useful skills to have. 
+
+Some examples/code for plotting can be found on the [Plotting Examples page](http://stanford.edu/class/psych252/plots/index.html) of the class website. Additional tips for plotting with the `{ggplot2}` package can be found in the [R Cheatsheet](http://stanford.edu/class/psych252/cheatsheets/index.html#r-cheatsheet)!
+
+If you're starting in Module 2 directly we are using a package called `ggplot()` for plotting, call `install.packages('ggplot2')` to get the package, and use it as shown below. Note the "layered" structure, where we add the boxplot on top of the base object.
+
+First, we load in the package `{ggplot2}`:
+```{r}
+library(ggplot2)
+```
+
+Let's take a look at the factor we created, by plotting age category as a function of age.
+
+```{r plot_agecat, fig.width=6, fig.height=5}
+ggplot(data=df_survey) +
+  geom_boxplot(aes(x=agecat,y=age))
+```
+
+Creating factors from continuous variables
+------------------------------------------
+
+Suppose the variable "agecat" wasn't given to us, but we still wanted to group participants into categories based on their respective ages. Given the "age" variable, we can create a new categorical variable (i.e., **factor**) by specifying breaks at specific intervals:
+
+```{r agecat0_df_survey}
+df_survey <- df_survey %>% 
+  mutate(agecat0 = age %>% 
+           findInterval(c(29, 39, 49, 65)) %>% 
+           factor())
+
+# doing the same thing using base R:
+# df_survey$agecat0 = findInterval(df_survey$age, c(29,39,49,65))
+# df_survey$agecat0 = factor(df_survey$agecat0)
+head(df_survey)
+```
+
+Specifically, these break points result in 5 age categories, 0:28, 29:38, 39:48, 49:64, and 65 and up. We can also visualize these groups:
+
+```{r plot_agecat0, fig.width=5, fig.height=4}
+ggplot(data=df_survey) +
+  geom_boxplot(aes(x=agecat0,y=age))
+```
+
+Let's also take a look at plotting a histogram of the ages. Here we are also setting the color of the bars as well as the title of the plot. The BW theme removes that ugly grey grid in the background which is the default.
+
+```{r plot_agedist, fig.width=5, fig.height=4}
+ggplot(data=df_survey) +
+  geom_histogram(aes(x=age),fill='orange',color='black',binwidth=4) + 
+  ggtitle('Distribution of Age') +
+  theme_bw()
+```
+
+Next, let's view a scatter plot of optimism by age. Before when we plotted the data, we were plotting a **factor** variable on the x-axis. As a result, boxplots were the logical way to view the data. However, if the x-axis variable is **continuous** (i.e., numeric), we would prefer a scatterplot.
+
+We'll also add in a line to get a sense of the general trend of the data; here, we'll plot a non-parametric best-fitting curve in red using the ["loess"](https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/loess) function.
+
+```{r plot_optmism_on_age, fig.width=5, fig.height=4}
+ggplot(data=df_survey,aes(x=age,y=optmism)) +
+  ggtitle('Optimism vs. Age') +
+  geom_point() +
+  geom_smooth(method="loess",color="red")
+```
+
+# Getting help
+
+If you learn nothing else today, learn this: Search!
+Search quickly, search often, and search in plain English (or your preferred non-computer language)! 
+
+Use the internet!
+-------------------
+Don't know what function you should use to do a t-test? Google "t test R", or "how do I do a t-test in R?". Don't remember how to use the chisq.test() function? Google "chisq.test() R". Don't remember what a chi-squared test is? Google it, and read the Wikipedia page, and the Stackexchange discussion, and whatever weird PDFs you find online. Still getting an error message when you try to run the code? Google that error message, in quotes.
+
+Every person using R, and every person doing statistics, has a million questions as they are doing it - novices and experts alike. Luckily for all of us, many of our fellow R and stats learners post their questions online, and other lovely people attempt to answer them publicly! We read somewhere that a prominent distinction between an experienced programmer and a novice is the longer latency for the novice to look up the help for something confusing (but the direction of causality is not clear!).
+
+Use R!
+---------------
+Another wonderful thing about working in R is that there's actually a lot of help built right into R, and RStudio makes it very easy to see. Almost all R functions (more later on what those are) have help files built in that will provide you with useful information about what those functions do and how to use them. You find this by typing '?function', where I am using "function" as a stand-in for the name you actually want to know about (e.g., '?chisq.test' or '?t.test'). It's important to read these files closely the first time you encounter a function, but it's also (possibly more) important to refer to them **frequently**. If you have a sense for what you want to do, but don't know or can't remember the exact function that will do it, you can use two question marks to search through the help files for a term (e.g. '??regression').
+
+Getting Help Practice
+------------------------
+
+Here are several chunks of code that are broken. Fix them!! What tools are available to help you use to do this? We've included a note under each chunk about what we were **trying** to do :).
+
+Note: you need to uncomment (remove the #) the commented lines, otherwise they won't crash :).
+```{r}
+x = 25:90
+#x[90,]
+```
+(The goal was to get the last element of x)
+
+```{r}
+ggplot(data=df_survey, aesthetics(x = age, y = recallq)) +
+  geom_point()
+```
+
+(We wanted a scatterplot of age against responses to the recall question)
+
+```{r}
+example = data.frame(label=c("ENS1","ENS2","ENS3","ENS4"),hsp44=c(0,2,1,0),mus=c(25,NA,NA,44))
+ggplot(data=example, aes(x = mus, y = hsp44)) +
+  geom_point(size=2)
+```
+
+(We wanted to include the rows with mus=NA in our plot, but set mus=0 for those values)
+
+Here's a more general problem you will run into, simply, how to do something you've never done before! Search google and figure out how to plot a **polynomial** regression line (e.g. y = x^2) onto this ggplot code:
+
+```{r}
+ggplot(data = df_survey, aes(x = age, y = optmism, color = factor(party))) +
+  geom_point()
+```
+
+# Statistical Tests - Not (necessarily) required for PSYCH 251
+
+*note*- The materials in this section go beyond the mandatory material in our first course in the stats sequence. However, having some familiarty with them might help with the project for the class, and/or may make it easier to work with your own data later on. This section also combines what we've learned so far and implements it in the context of data analysis. 
+
+So far, we have learned how to use graphs and plots to get an idea about possible patterns in our data (such as- relationships between variables and differences between groups). However, the fact that something *looks like* a pattern doen't necessarily mean that there is indeed a pattern. For the most part we test whether patterns are statistically significant through *parametric* null hypothesis testing. There are other methods that are gaining prominance within psychology (such as Bayesian analysis and nonparametric methods), but we will not deal with them here. Chances are that the studies you will encounter in PSYCH 251 used some type of parametric test. 
+
+We will not get into the details of hypothesis testing in this tutorial, and will quickly introduce two  widely used methods: t-test and linear regression. 
+
+T-tests
+------------
+A basic and widely used procedure is the [student's t-test](https://en.wikipedia.org/wiki/Student%27s_t-test) (read the Wikipedia entery for the interesting story behind the test's name). This is a test to compare the **mean** of two grops (either independent or not- such as in the case of repeated measures). In this test, we are interested in the standerdized difference (the **t-statistic**) between two groups (or samples of data). This test *typically* assumes that the distribution of scores in our two populations of interest is normal, and that the two samples have similar (homogeneous) variance. 
+
+We will use our data (df_survey) to go through the steps of a *two-samples* t-test. We are curious whether voters for one party are older than voters for another party. Our dataset has a varaible for party affiliation ("party"), but it has 3 parties and we are interested in two parties only: Democrat (denoted with-1) and Republican (denoted with-2). 
+
+First, use what you've learned so far to create a dataset with only Democrats and Republicans. 
+```{r}
+# Use dplyr to select only Democrats and Republicans. Instead of removing observasions from the existing dataset, try to create a different dataset named 'df_dr' that includes only the observations of interest. 
+
+
+
+
+
+
+
+
+
+
+
+# My answer:
+df_dr <- df_survey %>% 
+  subset(party == 1 | party == 2)
+
+# 'Sanity' check:
+summary(df_dr$party) #-> note the min=1 and max=2
+```
+
+Try plotting the ages in the two groups in an informative way (there is more than one option). 
+*note*- There are advantages and disadvantages to plotting data prior to analysis. We will likely discuss them in 251.
+
+```{r}
+# Let's take one approach:
+ggplot(df_dr, aes(x=party, y=age, fill=party))+
+  geom_boxplot()
+```
+
+Whooops! That seems odd! What might be the problem?
+Looking at the structure of our dataset again might give us a hint.
+```{r}
+str(df_dr)
+```
+
+A-ha! "party" is an integer variable (we could have known that before, when we asked for summary() and got things like min. max. and mean- which doesn't make sense in the case of a factor (i.e- a categorical variable)).
+Use your skills to create a new varaible- a factor for 'party'. Try labeling the levels of this facor as 'Democrat' and 'Republican' accordingly. 
+```{r}
+# Create new 'party_cat' variable
+
+
+
+
+
+
+
+
+# one way (tidyverse)
+df_dr <- df_dr %>% 
+  mutate(party_cat = party %>% 
+           factor(labels = c("Democrat", "Republican")))
+
+
+# Another way (base R)
+df_dr$party_cat=factor(df_dr$party, labels = c("Democrat", "Republican"))
+
+#Sanity chack
+is.factor(df_dr$party_cat)
+summary(df_dr$party_cat) #-> Note that now we have counts of cases in each group. 
+```
+
+Now let's plot the ages again:
+
+```{r}
+# Plot the age in each of the two groups in some informative way
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# One option (same as before):
+ggplot(df_dr, aes(x=party_cat, y=age, fill=party_cat))+
+  geom_boxplot() #-> What does this plot tell us? What can we learn about the ages in both groups from this representation? Does it seem like there's a difference?
+
+# (It represents the distribution of ages in each group. The bold line is the median, the box is the inter-quartile range- lower bound: first quartile (the 25th precentile), upper bound- third quartile (the 75th precentile))
+
+
+# Another option:
+ggplot(df_dr, aes(x=party_cat, y=age, fill=party_cat))+ #-> note that the first line is the same!
+  stat_summary(fun.y = "mean", geom = "bar", position = "dodge")+
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", position = position_dodge(width = 0.90), width=0.2, fun.args = list(mult = 1))
+
+#What can we learn from this graphical representation? In what ways is it similar and different from the box plot? Does it now seem like there might be a difference between the mean age in the two groups?
+#(The height of the bar is the mean age, the error bar represents the standard error around the mean)
+```
+
+In order to formally test whether there is sufficient evidence for a difference between the mean age in each group we need to run a t-test. This is done with a single function, specifying a 'formula' which takes the quatitive varaible as its first argument and the two-level factor varaible as its second argument. 
+```{r}
+t.test(df_dr$age~df_dr$party_cat) #-> the operator '~' is the main formula operator and can be roughly understood as "by". What we are telling R in this case is something like "do a t-test on age by party affiliation".
+```
+
+From this output we learn that the mean age in the 'Democrat' group is 48.31 and in the 'Republican' group it is 46.21. We also learn that the difference between the two means is *not* statistically significant: the p-value is 0.34 (rounded). 
+
+By default, the t.test function is assuming we are interested in a *two-tail test* and assumes that the variance of age in the two groups is *not* homogeneous. We can specify a one-tailed test (if we are only interested in knowing whether republicans are older for example) by using 'alternative=' and we can choose to assume equal varaince in the two groups using 'var.equal=T'. 
+
+Let's try this:
+```{r}
+t.test(df_dr$age~df_dr$party_cat, alternative="less", var.equal=T)#-> we specify alternative="less" because we think the first group's mean age (in this case- Democrats) is less than that of the second group.
+
+# Our output now looks quite different! Though the means are naturally the same, it is now labeled a "Two Sample t-test" (as opposed to "Welch Two Sample t-test"), our df are larger, and the p-value is much larger (this is because our results are in the "wrong" direction to our hypothesis).
+```
+
+Practice- run a t-test to test the hypothesis that Democrats are more optimistic than Republicans. You may assume equal varaince.
+```{r}
+# Run the approproate t-test, assume equal varaince
+
+
+
+
+
+
+
+
+
+
+
+# Answer:
+t.test(df_dr$optmism~df_dr$party_cat, var.equal=T, alternative="greater")
+```
+
+What is your conclusion? Do we have evidence that Democrats are more optimistic than Republiccans?
+

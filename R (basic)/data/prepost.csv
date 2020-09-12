@@ -1,0 +1,11 @@
+subject,gender,age,pretest,posttest,condition,diff
+1,f,20,45,47,drug,2
+2,m,45,65,69,drug,4
+3,f,36,45,55,drug,10
+4,m,23,70,68,drug,-2
+5,f,19,86,91,drug,5
+6,m,31,78,80,placebo,2
+7,m,40,55,55,placebo,0
+8,f,53,76,77,placebo,1
+9,f,46,66,61,placebo,-5
+10,m,34,81,80,placebo,-1

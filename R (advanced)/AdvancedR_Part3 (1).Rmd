@@ -1,0 +1,277 @@
+---
+title: "Introduction to Statistical Computing with R: Part 3"
+output:
+  html_document:
+    highlight: pygments
+    theme: flatly
+    toc: yes
+---
+
+### Welcome to part 3!
+
+Let's load our data and packages back in:
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+df_survey = read.csv('https://raw.githubusercontent.com/lampinen/R_workshop_materials/master/data/fieldsimul1.csv') %>% 
+  #here we make a variable for the participant ID number
+  rowid_to_column("participant")   
+
+df_dr <- df_survey %>% 
+  subset(party == 1 | party == 2) %>% 
+  mutate(party_cat = party %>% 
+           factor(labels = c("Democrat", "Republican")))
+```
+
+
+We'll also set the "seed" here. Setting the seed means that any time we run an operation that's non-deterministic (meaning, it has some element of randomness) we can be sure that it will yield the exact same answer for everyone. We'll set ours to 2020 so that we all return the same results. 
+```{r}
+set.seed(2020)
+```
+
+
+Logistic regression
+-----------------------
+To investigate such relationships when our outcome variable is binary (e.g., 0 or 1), we'll need to use logistic regression in place of linear regression. The R function that allows this (and other types of generalized linear regression) is `glm`. Check out the help for it, and see if you can figure out how to run a logistic regression with one or more of condition, rt, and experiment stage as predictors!
+
+Let's try to predict party affiliation (our binary outcome variable) from age and optimism!
+
+Try running this logistic regression model, using the same type of formula setup as with linear regression. We'll use the dataframe `df_dr` and the `party_cat` variable, so that we're restricted to Democrats or Republicans coded as a binary factor. 
+
+```{r}
+logistic_model = glm(party_cat ~ age + optmism, family="binomial", data = df_dr)  
+summary(logistic_model)
+```
+
+Now let's try to visualize what this model really looks like. First, we'll use the `predict` function to get our model's predictions about party preference in our dataset. Then, we'll use `ggplot` to visualize how well our model fits the data, using `geom_jitter` to add some horizontal jitter (this helps us see all the points a little more easily)
+
+```{r}
+predicted_party<-predict(logistic_model, df_dr, type="response")
+
+df_dr <- df_dr %>% 
+  mutate(party_cat_numeric = party_cat %>% as.numeric() -1)
+# doing the same thing using base R:
+# df_dr$party_cat_numeric <- as.numeric(df_dr$party_cat)-1
+
+ggplot(df_dr, aes(x=optmism, y=party_cat_numeric)) + geom_jitter(width=0.15,height=0) + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+```
+
+
+Prediction
+-----------------------
+How well does our model generalize to new data? Can we predict someone's party affiliation based on optimism alone?
+
+To do this, we'll split our data into two sets: training data (used to build our logistic regression model) and test data (used for validation). We have 164 subjects in the `df_dr` dataframe of Democrats and Republicans. Let's randomly select 32 of them to leave out as our test data, and use the rest to train a logistic regression model. 
+
+Try it yourself! Use the `sample` function to randomly shuffle a list of numbers from 1 to 164, representing each subject in our dataset. Then subset this shuffled list into a test group of 32 called `test.subj` and a training group of 132 called `train.subj`. If you get stuck, try ?sample (from base R)
+
+```{r}
+## Your answer here ##
+
+
+
+
+
+
+
+
+## one way to do this:
+# shuffled.subj.list = sample(1:164)
+# test.subj = shuffled.subj.list[1:32]
+# train.subj = shuffled.subj.list[33:164]
+```
+
+
+Now we've got our subjects split into two groups, "train" and "test". Let's use just the train set to build our logistic regression model. 
+
+```{r}
+
+logistic_model_train = ## Your answer here ##
+summary(logistic_model_train)
+
+
+
+
+
+
+
+
+#logistic_model_train = glm(party_cat ~ optmism, family="binomial", data = df_dr[train.subj,])  
+#summary(logistic_model_train)
+```
+
+
+Can we use this model to predict party affiliation in the test subjects that the model has not seen before? We'll use the `predict` function, and feed in our logistic regression model and the test subjects' data. 
+
+```{r}
+predicted_party_test<-predict(logistic_model_train, df_dr[test.subj,], type="response")
+```
+
+
+How did we do? If the model prediction is less than 0.5, this means our model thinks it's more likely for that individual to be Democrat, whereas if the prediction is greater than 0.5 it's guessing the individual is Republican. Run the code section below to see a table with the predicted party affiliation and the actual party affiliation, and calculate the average accuracy of our model. What do you notice?
+
+```{r}
+predicted.party=ifelse(predicted_party_test<.5,"Democrat","Republican")
+
+actual.party <- df_dr %>% 
+  subset(participant %in% test.subj)
+# doing the same thing using base R:
+actual.party=df_dr$party_cat[test.subj]
+
+table(predicted.party,actual.party)
+mean(predicted.party==actual.party)
+```
+
+It looks like our model didn't do too well! From the table, we can see that the on-diagonals (predicting the correct party affiliation) aren't much higher than the off-diagnonals (incorrectly guessing the party affiliation). Indeed, our average accuracy is only around 0.59, meaning our model is only guessing correctly around 59% of the time, not too much better than a random coin flip!
+
+What does this tell us? An important takeaway here is that a dependent variable used in a logistic (or linear) regression model might be significantly associated with our outcome variable (e.g., when we saw that optimism was significantly associated with party affiliation), but this DOESN'T necessarily mean that we can use this dependent variable to PREDICT party affiliation in held-out data. Splitting our data into a training group and a test group lets us valdiate whether our model is strong enough to make predictions about held-out data. 
+
+
+Further practice (Stroop Dataset)
+-----------------------
+For some further practice with simple tests, let's return to the Stroop dataset from module 1.
+
+```{r}
+rm(list=ls())
+library(tidyverse)
+stroop_data = read.csv("https://raw.githubusercontent.com/lampinen/R_workshop_materials/master/data/stroop.csv")
+```
+
+First, let's tell R that `stroop_data$correct` is a boolean factor: 
+```{r}
+stroop_data = stroop_data %>%
+  mutate(correct = factor(correct, levels=c(0, 1), labels=c(FALSE, TRUE)))
+```
+
+We could get a general sense of the differences by condition by just using a dplyr summarize:
+
+```{r}
+stroop_summary_data = stroop_data %>% 
+  group_by(condition) %>%
+  summarize(rt.mean = mean(rt),rt.sd=sd(rt))
+stroop_summary_data
+```
+
+We can plot this data too!
+
+```{r}
+ggplot(stroop_summary_data, aes(x=condition, fill=condition, y=rt.mean)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=rt.mean-rt.sd,
+                    ymax=rt.mean+rt.sd), width=0.25) +
+  theme_bw()
+```
+
+But if you look at the data you might notice that some rt values are -1, probably indicating no response before the time limit. We definitely want to remove these before we look at the data, so let's fix that. We also might want to remove practice trials, and compare across correct and incorrect responses:
+
+```{r filter_and_show_stroop_rts}
+stroop_better_summary = stroop_data %>% 
+  subset(rt > 0, exp_stage != "practice") %>%
+  group_by(condition,correct) %>%
+  summarize(rt.mean = mean(rt), rt.sd=sd(rt))
+stroop_better_summary
+```
+
+```{r}
+ggplot(stroop_better_summary, aes(x=correct, fill=condition, y=rt.mean)) +
+  geom_bar(stat="identity", position="dodge") +
+  geom_errorbar(aes(ymin=rt.mean-rt.sd,
+                    ymax=rt.mean+rt.sd), 
+                width=0.25, position=position_dodge(width=0.9)) + # don't worry about this, just for aesthetics
+  theme_bw()
+
+```
+
+We see the classic pattern of responses, where participants are slower on incongruent trials, as well as when they are incorrect.
+
+For now, let's just filter out the invalid rts and from the data we are going to use.
+
+```{r}
+filtered_stroop_data = stroop_data %>% 
+  subset(rt > 0)
+```
+
+First, let's do a simple t-test on just condition
+```{r}
+t.test(filtered_stroop_data$rt ~ filtered_stroop_data$condition)
+```
+
+There is a substantial difference! Let's try this as a linear regression now:
+
+```{r}
+model0 = lm(rt ~ condition, filtered_stroop_data)
+summary(model0)
+```
+
+Great, we find a similar result (again, don't worry too much about interpreting this output yet).
+
+Now, try to extend this model to also include whether the response was correct and whether it was a practice or test trial as predictors! What do you see?
+
+```{r}
+model1 = ## Your answer here ##
+summary(model1)
+
+
+
+
+
+
+
+
+## my answer:
+# model1 = lm(rt ~ condition + correct + exp_stage, filtered_stroop_data)
+# summary(model1)
+```
+
+It looks like practice vs test might be important as well! See if you can make a plot using `ggplot` that includes all three predictors (hint: you will have to summarize the data including the new variables, and you may want to check out`?facet_wrap` or `?facet_grid`)
+```{r}
+## your answer here##
+
+
+
+
+
+
+
+
+## one possible answer:
+# filtered_stroop_data %>% 
+#          group_by(condition, correct, exp_stage) %>%
+#          summarize(rt.mean=mean(rt),
+#                    rt.sd=sd(rt)) %>%
+#   ggplot(., # the previous pipe plus this are a cute, but by no means necessary
+#             # way of passing the data to ggplot
+#          aes(x=correct, fill=condition, y=rt.mean)) +
+#     geom_bar(stat="identity", position="dodge") +
+#     geom_errorbar(aes(ymin=rt.mean-rt.sd,
+#                       ymax=rt.mean+rt.sd), 
+#                   width=0.25, position=position_dodge(width=0.9)) +
+#     theme_bw() +
+#     facet_wrap(~ exp_stage)
+```
+
+Of course, you might be interested in whether answers were correct or incorrect! Since T/F values are not normally distributed, the appropriate test to use in this case is a *logistic regression* (you'll learn more about why in 252). 
+```{r}
+logistic_model = ## your answer here##
+summary(logistic_model)
+
+
+
+
+
+
+
+
+
+
+## one possible answer:
+## Note: it's often good practice to convert milliseconds to seconds before including them as a predictor, the following includes one way of doing so
+# logistic_model = glm(correct ~ condition + I(rt/1000) + exp_stage, family="binomial", filtered_stroop_data)  
+# summary(logistic_model)
+```
+
+
+Thanks for working through these modules! If you're still not sick of playing around with R, you can check out [this tutorial](https://raw.githubusercontent.com/lampinen/R_workshop_materials/master/bootstrapped_t_test.Rmd) on making a function for [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) a t-test, or look at some of the links from the end of module 1.
