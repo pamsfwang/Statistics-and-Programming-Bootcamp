@@ -99,7 +99,7 @@ Including basic skills with Bash and Github, and knowledge of open science and g
 **Good coding practices**
 
 ## Contributors
-Many people have contributed to developing and revising the tutorial material over the years:     
+Many people have contributed to developing and revising the coding tutorial materials over the years:     
 Paul Thibodeau    
 Mike Frank    
 Benoit Monin    
